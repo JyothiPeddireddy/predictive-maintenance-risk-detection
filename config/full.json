@@ -1,0 +1,12 @@
+{
+  "seed": 20261022,
+  "n_plants": 3,
+  "n_lines": 12,
+  "n_machines": 100,
+  "sensors_per_machine": 5,
+  "days": 90,
+  "sampling_interval_s": 1800,
+  "start_utc": "2026-01-01T00:00:00+00:00",
+  "batch_size": 100000,
+  "output_dir": "output/full"
+}
