@@ -135,3 +135,40 @@ Run the complete test suite using the repository's existing test setup. Report t
 
 yes start Phase 3.
 ```
+
+
+---
+
+## Entry: Phase 3B - scenarios, sensor faults and operational records
+
+| Field | Entry |
+|---|---|
+| Timestamp | 2026-10-28, about 16:45 IST (fill in if different) |
+| Tool name / model | Claude (Sonnet 5.5), Claude Code session with a code sandbox |
+| Purpose | Audit the project, then build Phase 3B: failure scenarios, sensor faults, maintenance/technician/parts records, safe loading into a separate dev database |
+| Code or decision used | `src/generator/scenarios.py`, `src/generator/records.py`, pipeline/CLI/checksum extensions, `config/dev_scenarios.json`, tests `test_scenarios.py` and `test_starter_checksum.py`; decisions in `docs/design_decisions.md` |
+| Changes I made | ______ (record any edits you make) |
+| Verification outcome | In the AI's sandbox (PostgreSQL 16, Python 3.13): 123 tests passed. Phase 3A audit run on my Windows machine before this work: 89 passed on rerun, 1 transient teardown permission error. Phase 3B not yet run on Windows: ______ |
+
+**Exact prompts submitted:** (1) the "Complete Progress Audit and Remaining Work" prompt (attached as a text file),
+(2) "all are clear upto phase 3a then go to phase 3b proceed".
+
+Limits: scenario data is synthetic; no evaluation or risk engine exists yet, so the earlier reported metrics
+(precision 1.00, recall 0.521, ...) are unverified.
+
+
+---
+
+## Entry: Phase 4 - risk engine, evaluation and reports
+
+| Field | Entry |
+|---|---|
+| Timestamp | 2026-10-28 21:48 IST ("yes start") and 2026-10-29 05:33 IST ("yes start") |
+| Tool name / model | Claude (Sonnet 5.5), Claude Code session with a code sandbox |
+| Purpose | Build the rule-based 0-100 risk engine, evaluation (72 h horizon), holdout test, CLI commands and reports |
+| Code or decision used | `src/risk/`, `src/evaluation/`, new CLI commands `score`, `report`, `evaluate`, `evaluate-holdout`; tests `test_risk_engine.py`, `test_evaluation.py`; `docs/risk_and_evaluation.md` |
+| Changes I made | ______ (record any edits you make) |
+| Verification outcome | In the AI's sandbox (PostgreSQL 16, Python 3.13): 151 tests passed; holdout run on 10 unseen synthetic seeds: event recall 93.3% (56/60), precision 77.9%, recall 67.7%, F1 72.5%. Not yet run on my Windows machine: ______ |
+
+Limits: synthetic data only; the older reported metrics (precision 1.00, recall 0.521, ...) could not be reproduced
+and are not used.

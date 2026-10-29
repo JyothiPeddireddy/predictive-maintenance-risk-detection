@@ -1,0 +1,17 @@
+{
+  "seed": 20261028,
+  "n_plants": 1,
+  "n_lines": 3,
+  "n_machines": 12,
+  "sensors_per_machine": 4,
+  "days": 45,
+  "sampling_interval_s": 1800,
+  "start_utc": "2026-01-01T00:00:00+00:00",
+  "batch_size": 50000,
+  "output_dir": "output/dev_scenarios",
+  "n_technicians": 6,
+  "n_failures": 6,
+  "n_sensor_faults": 6,
+  "n_benign_events": 4,
+  "pm_interval_days": 14
+}

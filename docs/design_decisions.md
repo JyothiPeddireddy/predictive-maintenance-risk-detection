@@ -61,3 +61,48 @@ only the steps that database has not had yet.
 - One row per part per work order in `work_order_part` (a part used twice is one row with a larger quantity).
 - `telemetry_event.machine_state` was left unchanged (4 values, no `FAILED`) to keep Phase 2 data compatible. Revisit in
   Phase 3B if failed machines must keep emitting telemetry with a `FAILED` state.
+
+
+## Phase 3B: failure scenarios and operational records
+
+- **Baseline untouched.** `generator/telemetry.py` (healthy data) is unchanged. `generator/scenarios.py` plans events and
+  rewrites a *copy* of each sensor's frame. All scenario switches default to 0, so `starter.json` and `full.json`
+  reproduce the original data (md5 `c92c47e5...`, asserted by `tests/test_starter_checksum.py`).
+- **Separate random streams** (`[seed,9001]` plan, `[seed,sensor,7]` effects, `[seed,9003]` records) so adding scenarios
+  never shifts the baseline stream.
+- **Five failure categories** (bearing wear, overheating, lubrication, misalignment, electrical), each with its own
+  signature on TEMP and VIB, a 2-9 day degradation ramp, and a `gain` (signal strength). Every third failure is
+  deliberately subtle (gain 0.3-0.5) so later evaluation is not unrealistically easy.
+- **Sensor faults:** DRIFT (growing offset), FLATLINE (constant value), DROPOUT (NULL readings). A fault is flagged
+  `FAULTY` in `sensor_status_history` *later* than it really starts, so a risk engine cannot rely on the flag alone.
+  Faults never overlap a failure window on the same machine.
+- **Benign surges** (3-8 h temperature/vibration bumps on healthy machines) are included as false-alarm traps.
+- **Preventive maintenance** every `pm_interval_days` per machine, plus an INSPECTION work order per sensor fault.
+- **Telemetry state during a failure:** `telemetry_event.machine_state` has no `FAILED` value (Phase 2 constraint kept
+  for compatibility), so telemetry shows `MAINTENANCE` while the machine is failed or being repaired. The accurate
+  `FAILED` state is in `machine_state_history`.
+- **Sensor types:** the schema only allows TEMP and VIB; electrical problems therefore show up as heat spikes and
+  vibration bursts. Adding current/pressure sensors needs a new migration (not done).
+- **Shifts:** NIGHT 00-06 (IDLE), MORNING 06-14, AFTERNOON 14-24 (RUNNING) to match the baseline's idle hours.
+- **Technicians** get a lead (and, for MAJOR/CRITICAL jobs, an assistant) chosen by specialty and availability; the
+  planner avoids double-booking, and the `ON_LEAVE` technician is never assigned.
+- **Safe loading:** a load without `--reset` refuses a non-empty database; scenario configs are refused for the
+  protected database `predictive_maintenance`; `--reset` is allowed on `*_test` and `*_dev` databases.
+- **Ground truth** (`failure_event`, the manifest) is for evaluation only. The risk engine (next phase) must never read it.
+
+### Known limits
+- Only one failure per machine; failures always complete inside the data window.
+- The dev dataset is small (12 machines, 45 days). The 100-machine / 90-day `full.json` has not been given scenario
+  settings or been loaded yet.
+- No risk engine, evaluation or reports exist yet; no metric from any earlier phase is reproduced here.
+
+
+## Phase 4: risk engine and evaluation
+- Rule-based and explainable (no ML): every score traces to level / trend / spike rules on a machine's own baseline.
+  Full description, results and limits: `docs/risk_and_evaluation.md`.
+- `src/risk/` is isolated: it cannot import evaluation, generator or model code, has a fixed input column list, and is
+  point-in-time. Tests enforce all three. Ground truth lives only in `src/evaluation/`.
+- Tuning seeds and holdout seeds are separate lists in `src/evaluation/runner.py`; the threshold rule was fixed before
+  the holdout run.
+- Holdout datasets are generated in memory with the same generator code (no extra database needed).
+- A leftover earlier draft `src/risk/inputs.py` (not used by anything) was removed to avoid two competing input definitions.

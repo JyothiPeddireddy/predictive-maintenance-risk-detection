@@ -59,6 +59,21 @@ python -m pytest -q                        # runs on the *_test database only
 - The tests that check upgrading create and drop a temporary database `pm_migration_scratch_test`; this needs the
   `CREATEDB` permission (the setup SQL above grants it). Without it those tests are skipped, with a message.
 
+## 6. Phase 3B: create a separate development database for scenario data
+In pgAdmin (as the `postgres` user), create it once. Your original `predictive_maintenance` is not touched:
+```sql
+CREATE DATABASE predictive_maintenance_dev OWNER pm_user;
+```
+Then in PowerShell (project folder, `.venv` active):
+```powershell
+python -m src.cli --db predictive_maintenance_dev migrate
+python -m src.cli --db predictive_maintenance_dev load --config config/dev_scenarios.json
+python -m src.cli --db predictive_maintenance_dev scenario-summary
+python -m src.cli summary                  # original database: md5 must still be c92c47e53d53369e131f07a37e026594
+```
+To rebuild the dev database from scratch (allowed because its name ends in `_dev`):
+`python -m src.cli --db predictive_maintenance_dev load --config config/dev_scenarios.json --reset`
+
 ## Common problems
 | Message | Likely cause |
 |---|---|
@@ -66,4 +81,6 @@ python -m pytest -q                        # runs on the *_test database only
 | `connection refused` / timeout | PostgreSQL service not running (Services -> postgresql-x64-NN) or wrong port |
 | `database "..." does not exist` | step 1 not completed for that database |
 | `REFUSED: this command DELETES all tables` | working as designed: use `migrate`, not `--reset`, on the real database |
+| `REFUSED: this config adds failure scenarios` | you tried to load scenarios into `predictive_maintenance`; add `--db predictive_maintenance_dev` |
+| `REFUSED: database ... already contains data` | loads only write into an empty database; use `--reset` on a `_dev`/`_test` database |
 | `Environment variable PM_DB_USER is not set` | `.env` missing, or you ran the command from a different folder |
